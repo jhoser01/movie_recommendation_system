@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 import pandas as pd
 import numpy as np
-import json
 import ast
-import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.neighbors import NearestNeighbors
