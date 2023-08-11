@@ -3,6 +3,12 @@ import pandas as pd
 import numpy as np
 import json
 import ast
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from sklearn.neighbors import NearestNeighbors
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 
 #iniciamos FastAPI y el dataframe
@@ -100,3 +106,51 @@ def get_director(nombre_director:str):
 
     return {'director':nombre_director, 'retorno_total_director':retorno_total_director, 'peliculas':peliculas, 'anio':anio,
      'retorno_pelicula':retorno_pelicula, 'budget_pelicula':budget_pelicula, 'revenue_pelicula':revenue_pelicula}
+
+
+
+#para la funcion de ML
+# Combinar las columnas en una nueva columna 'combinacion'
+data['combinacion'] = (
+    data['overview'] +
+    ' ' +
+    data['name_genre'].apply(lambda x: ' '.join(x) if isinstance(x, list) else '') +
+    ' ' +
+    data['nameBTC'].apply(lambda x: ' '.join(''.join(name.split()) for name in x) if isinstance(x, list) else '') +
+    ' ' +
+    data['Director'].apply(lambda x: ''.join(x.split()) if isinstance(x, str) else '') +
+    ' ' +
+    data['popularity'].astype(str) +
+    ' ' +
+    data['vote_average'].astype(str)
+)
+
+# Reemplazar NaN con cadenas vacías en la columna 'combinacion'
+data['combinacion'] = data['combinacion'].fillna('')
+
+# Crear una instancia de TfidfVectorizer para vectorizar el texto combinado
+tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
+
+# Aplicar TF-IDF al texto combinado
+matrix = tfidf.fit_transform(data['combinacion'])
+#definimos aquella funcion que al 'ingresar un nombre de pelicula, te recomienda las similares en una lista'''
+@app.get('/recomendacion/{titulo}')
+def recomendacion(titulo:str):
+    # Crear una instancia del clasificador KNN
+    knn = NearestNeighbors(n_neighbors=6, metric='cosine')
+
+    # Ajustar el modelo KNN utilizando la matriz tfidf_matrix
+    knn.fit(matrix)
+
+    # Encontrar el índice de la película de entrada
+    entrada_index = data[data['title'] == title].index[0]
+
+    # Encontrar los vecinos más cercanos a la película de entrada
+    distances, indices = knn.kneighbors(matrix[entrada_index])
+
+    # Recuperar los títulos de las películas recomendadas utilizando los índices encontrados
+    recommended_movies = data.iloc[indices[0][1:]]['title']
+
+    # Devolver las películas recomendadas
+
+    return {'lista recomendada': recommended_movies}
