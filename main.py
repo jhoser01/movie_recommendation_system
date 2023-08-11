@@ -143,7 +143,7 @@ def recomendacion(titulo:str):
     knn.fit(matrix)
 
     # Encontrar el índice de la película de entrada
-    entrada_index = data[data['title'] == title].index[0]
+    entrada_index = data[data['title'] == titulo].index[0]
 
     # Encontrar los vecinos más cercanos a la película de entrada
     distances, indices = knn.kneighbors(matrix[entrada_index])
